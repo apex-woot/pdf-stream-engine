@@ -120,10 +120,9 @@ func isOperator(token []byte) bool {
 	}
 	// Check if all characters are letters (or special operator chars)
 	for _, b := range token {
-		if (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '*' || b == '\'' {
-			continue
+		if !((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '*' || b == '\'') {
+			return false
 		}
-		return false // Not a simple operator
 	}
 	return true
 }
@@ -147,38 +146,17 @@ func parseOperand(token []byte) (any, error) {
 		return parseHexString(token) // This now returns ([]byte, error)
 	case '/':
 		return string(token[1:]), nil // Name
-	case '[':
-		// This case is now handled by the logic below
-	case ']':
-		// This case is now handled by the logic below
+	case '[', ']':
+		return string(token[0]), nil
 	default:
 		// Try to parse as a number (float or int)
 		if f, err := strconv.ParseFloat(string(token), 64); err == nil {
 			return f, nil
 		}
-
-		sToken := string(token)
-		if sToken == "[" {
-			return "[", nil // Array start marker
-		}
-		if sToken == "]" {
-			return "]", nil // Array end marker
-		}
-
 		// If not a number, it might be an inline operator we missed,
 		// but for operands, we'll error out.
 		return nil, fmt.Errorf("unrecognized operand type: %s", string(token))
 	}
-	// Fallback for cases like '[' and ']' which are now handled in default
-	sToken := string(token)
-	if sToken == "[" {
-		return "[", nil
-	}
-	if sToken == "]" {
-		return "]", nil
-	}
-	// This should be unreachable, but as a safeguard:
-	return nil, fmt.Errorf("unrecognized operand type: %s", string(token))
 }
 
 // parseLiteralString handles (string) with escapes.
@@ -241,10 +219,12 @@ func parseHexString(token []byte) ([]byte, error) {
 	s := token[1 : len(token)-1]
 
 	// PDF hex strings can contain whitespace, so let's strip it.
-	s = bytes.ReplaceAll(s, []byte(" "), []byte(""))
-	s = bytes.ReplaceAll(s, []byte("\n"), []byte(""))
-	s = bytes.ReplaceAll(s, []byte("\r"), []byte(""))
-	s = bytes.ReplaceAll(s, []byte("\t"), []byte(""))
+	s = bytes.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1 // Remove whitespace
+		}
+		return r
+	}, s)
 
 	// Ensure even length, pad with 0 if not
 	if len(s)%2 != 0 {
@@ -414,10 +394,7 @@ func pdfTokenSplit(data []byte, atEOF bool) (advance int, token []byte, err erro
 }
 
 func isDelimiter(b byte) bool {
-	switch b {
-	case '(', ')', '<', '>', '[', ']', '{', '}', '/', '%':
-		return true
-	default:
-		return false
-	}
+	return b == '(' || b == ')' || b == '<' || b == '>' ||
+		b == '[' || b == ']' || b == '{' || b == '}' ||
+		b == '/' || b == '%'
 }

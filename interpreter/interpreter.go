@@ -123,19 +123,15 @@ func (interp *Interpreter) processOperation(op parser.Operation) error {
 			return fmt.Errorf("TJ operand not an array")
 		}
 		for _, val := range arr {
-			if str, ok := val.(string); ok {
-				if err := interp.showText(str); err != nil {
+			switch v := val.(type) {
+			case string, []byte:
+				if err := interp.showText(v); err != nil {
 					return fmt.Errorf("TJ: %w", err)
 				}
-			} else if b, ok := val.([]byte); ok {
-				if err := interp.showText(b); err != nil {
-					return fmt.Errorf("TJ: %w", err)
-				}
-			} else if num, ok := val.(float64); ok {
+			case float64:
 				// A number indicates a spacing adjustment.
 				// We are just extracting text, so we ignore it.
 				// A more advanced layout engine would use this.
-				_ = num // (silence linter)
 			}
 		}
 
@@ -157,51 +153,24 @@ func (interp *Interpreter) processOperation(op parser.Operation) error {
 			}
 			interp.textState.LastY = f
 		}
-	case "Td": // Move text position [tx ty]
+	case "Td", "TD": // Move text position [tx ty] (TD also sets leading)
 		if len(op.Operands) < 2 {
 			break // Ignore malformed op
 		}
-		if tx, err := operandToFloat(op.Operands[0]); err == nil {
-			if ty, err := operandToFloat(op.Operands[1]); err == nil {
-				if ty != 0 {
-					// Vertical move
-					interp.textBuilder.WriteString("\n")
-					interp.textState.LastY += ty
-				} else if tx > 1.0 { // Arbitrary "space" threshold
-					// Horizontal move that's not kerning
-					interp.textBuilder.WriteString(" ")
-				}
+		tx, err1 := operandToFloat(op.Operands[0])
+		ty, err2 := operandToFloat(op.Operands[1])
+		if err1 == nil && err2 == nil {
+			if ty != 0 {
+				// Vertical move
+				interp.textBuilder.WriteString("\n")
+				interp.textState.LastY += ty
+			} else if tx > 1.0 { // Arbitrary "space" threshold
+				// Horizontal move that's not kerning
+				interp.textBuilder.WriteString(" ")
 			}
 		}
-	case "TD": // Move text position and set leading
-		if len(op.Operands) < 2 {
-			break // Ignore malformed op
-		}
-		if tx, err := operandToFloat(op.Operands[0]); err == nil {
-			if ty, err := operandToFloat(op.Operands[1]); err == nil {
-				if ty != 0 {
-					// Vertical move
-					interp.textBuilder.WriteString("\n")
-					interp.textState.LastY += ty
-				} else if tx > 1.0 { // Arbitrary "space" threshold
-					// Horizontal move that's not kerning
-					interp.textBuilder.WriteString(" ")
-				}
-			}
-		}
-	case "rg": // Set fill color (non-stroking)
-	case "RG": // Set stroke color
-	case "g": // Set fill gray
-	case "G": // Set stroke gray
-	case "Tc": // Set character spacing
-	case "Tw": // Set word spacing
-	case "re": // Append rectangle
-	case "W": // Set clipping path
-	case "n": // End path
-	case "gs": // Set graphics state
-	case "cm": // Concatenate matrix
-	case "Do": // Draw XObject (e.g., image)
-		// We ignore these as we only care about text content
+	case "rg", "RG", "g", "G", "Tc", "Tw", "re", "W", "n", "gs", "cm", "Do":
+		// Ignore graphics operations - we only care about text content
 
 	default:
 		// log.Printf("Ignoring unhandled operator: %s", op.Name)
@@ -230,24 +199,18 @@ func (interp *Interpreter) showText(val any) error {
 }
 
 func isTextShowingOp(opName string) bool {
-	switch opName {
-	case "Tj", "TJ", "'", "\"":
-		return true
-	default:
-		return false
-	}
+	return opName == "Tj" || opName == "TJ" || opName == "'" || opName == "\""
 }
 
-// Helper to convert an operand to float64, with a fallback.
+// operandToFloat converts an operand to float64 with fallback handling.
 func operandToFloat(val any) (float64, error) {
-	if f, ok := val.(float64); ok {
-		return f, nil
-	}
-	if i, ok := val.(int); ok {
-		return float64(i), nil
-	}
-	if s, ok := val.(string); ok {
-		if f, err := strconv.ParseFloat(s, 64); err == nil {
+	switch v := val.(type) {
+	case float64:
+		return v, nil
+	case int:
+		return float64(v), nil
+	case string:
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
 			return f, nil
 		}
 	}
