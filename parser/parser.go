@@ -27,7 +27,7 @@ type Parser struct {
 // NewParser creates a new parser for a given reader.
 func NewParser(r io.Reader) *Parser {
 	scanner := bufio.NewScanner(r)
-	scanner.Split(pdfTokenSplit) // Use our custom tokenizer
+	scanner.Split(pdfTokenSplit)
 	return &Parser{scanner: scanner}
 }
 

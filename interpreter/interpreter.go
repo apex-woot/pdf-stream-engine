@@ -129,9 +129,13 @@ func (interp *Interpreter) processOperation(op parser.Operation) error {
 					return fmt.Errorf("TJ: %w", err)
 				}
 			case float64:
-				// A number indicates a spacing adjustment.
-				// We are just extracting text, so we ignore it.
-				// A more advanced layout engine would use this.
+				// Spacing adjustment in thousandths of an em.
+				// Negative values tighten spacing, positive values add space.
+				// Only add space for significantly large positive values.
+				// Threshold: ~100 = noticeable space (roughly 1/10 em)
+				if v > 100 {
+					interp.textBuilder.WriteString(" ")
+				}
 			}
 		}
 
@@ -164,8 +168,11 @@ func (interp *Interpreter) processOperation(op parser.Operation) error {
 				// Vertical move
 				interp.textBuilder.WriteString("\n")
 				interp.textState.LastY += ty
-			} else if tx > 1.0 { // Arbitrary "space" threshold
-				// Horizontal move that's not kerning
+			} else if tx > 1.0 {
+				// Horizontal move - add space only if movement is significant
+				// tx is in text space units (unscaled user space units).
+				// Typical character widths are 0.5-1.0, so movements > 1.0 indicate word spacing.
+				// This is a heuristic that may need tuning for specific PDFs.
 				interp.textBuilder.WriteString(" ")
 			}
 		}
