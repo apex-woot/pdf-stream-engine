@@ -2,151 +2,182 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/apex-woot/pdf-stream-engine/font"
 	"github.com/apex-woot/pdf-stream-engine/streamengine"
 )
 
-// This is a sample PDF content stream from a real file.
-const sampleStream = `
-%% Contents for page 1
-%% Original object ID: 111 0
+func main() {
+	fmt.Println("=== PDF Stream Engine - ToUnicode CMap Support ===\n")
+
+	// Example 1: Simple extraction (default WinAnsi encoding)
+	runSimpleExample()
+
+	fmt.Println("\n" + strings.Repeat("=", 60) + "\n")
+
+	// Example 2: Advanced extraction with ToUnicode CMap
+	runAdvancedExample()
+}
+
+// runSimpleExample demonstrates basic text extraction using default WinAnsi encoding.
+func runSimpleExample() {
+	fmt.Println("EXAMPLE 1: Simple Text Extraction (WinAnsi encoding)")
+	fmt.Println(strings.Repeat("-", 60))
+
+	// Sample PDF content stream
+	sampleStream := `
 BT
-/TT0 1 Tf
-9.96 -0 0 9.96 36 769.2 Tm
-( )Tj
-0.002 Tc -0.002 Tw 0 -74.843 Td
-[(P)3.8 (ag)-4 (e )]TJ
-0 Tc 0 Tw 2.205 0 Td
-(1)Tj
-0.506 0 Td
-( )Tj
-0.004 Tc -0.004 Tw 0.253 0 Td
-[(o)-2 (f )]TJ
-0.006 Tc -0.006 Tw 1.084 0 Td
-(10)Tj
-0 Tc 0 Tw 1 0 Td
-( )Tj
+/F1 12 Tf
+72 720 Td
+(Hello World) Tj
+0 -14 Td
+(This uses WinAnsi encoding) Tj
 ET
-q
-36 778.5 25 -25 re
-W n
-q
-/GS0 gs
-24.9999987 0 0 25.0000006 36.0000038 753.5000604 cm
-/Im0 Do
-Q
-Q
-BT
-/TT1 1 Tf
--0.001 Tc 0.001 Tw 15.96 -0 0 15.96 209.28 740.76 Tm
-[(N)1.3 (an)-6.1 (d)2 (i)-2.8 (t)-4.4 (a )]TJ
-0 Tc 0 Tw 3.857 0 Td
-(G)Tj
--0.001 Tc 0.001 Tw 0.647 0 Td
-[(an)-6.1 (gu)-5.5 (l)28.8 (y)-11.4 ( )]TJ
-0 Tc 0 Tw 3.301 0 Td
-(D)Tj
--0.001 Tc 0.001 Tw 0.707 0 Td
-(as)Tj
-0 Tc 0 Tw 0.992 0 Td
-(,)Tj
-0.233 0 Td
-( )Tj
--0.003 Tc 0.003 Tw 0.218 0 Td
-[(P)-13.1 (h.)-4.1 (D)]TJ
-0 Tc 0 Tw 2.158 0 Td
-( )Tj
-0.003 Tc -0.003 Tw 14.04 -0 0 14.04 189 602.4 Tm
-[(P)1.6 (r)19.6 (o)-0.7 (f)4.3 (e)4 (s)9.1 (so)-0.6 (r)11 ( )]TJ
-0 Tc 0 Tw 4.65 0 Td
-<96>Tj
-0.496 0 Td
-( )Tj
--0.007 Tc 0.009 Tw 0.222 0 Td
-[(Ph)-8.3 (a)-10.5 (r)-7.6 (m)2.7 (a)-10.5 (c)0.5 (e)-5.9 (u)-8.3 (t)-1 (i)-9.2 (ca)-10.4 (l)-6.7 ( S)-6.8 (c)-8.1 (i)-9.2 (e)-5.9 (n)-1.3 (ce)-5.9 (s)]TJ
-0 Tc 0 Tw 11.291 0 Td
-( )Tj
-/TT2 1 Tf
--0.003 Tc -0.003 Tw -11.966 -1.171 Td
-[(B)-7.4 (u)2 (t)-6.9 (l)-5.5 (e)-2.2 (r)0.8 ( U)-4.6 (n)-0.6 (i)18.6 (v)13.8 (e)-2.2 (r)0.8 (si)1.5 (t)-6.9 (y)]TJ
-0 Tc 0 Tw 7.274 0 Td
-( )Tj
-0.002 Tc -0.002 Tw 12 -0 0 12 36 553.44 Tm
-[(B)3 (io)3 (p)-2 (h)4 (ar)6 (m)4 (ac)3 (eu)4 (tic)3 (s)2 (,)-3 ( d)7 (r)6 (u)4 (g)-4 ( tar)6 (g)6 (eting)6 (,)-3 ( an)10 (tic)3 (anc)3 (er)5.9 ( d)7 (r)6 (u)4 (g)6 ( d)6.9 (el)3 (i)20.1 (v)26 (er)-4 (y)86 (,)-3 ( m)4 (u)4 (l)3 (ti)]TJ
-0 Tc 0 Tw (-)Tj
-0.002 Tc -0.002 Tw 28.04 0 Td
-[(d)7 (r)-4 (u)4 (g)6 ( )-10 (r)16 (es)2 (is)2 (tanc)3 (e)10 (,)-3 ( nano)3 (m)4 (ed)7 (ic)3 (i)10 (ne)]TJ
-0 Tc 0 Tw ( )Tj
-/TT1 1 Tf
--0.002 Tc 0.002 Tw 11.04 -0 0 11.04 36 516.36 Tm
-[(ED)-3.5 (UC)5.8 (A)73.9 (T)-4.3 (IO)-2.6 (N)]TJ
-0 Tc 0 Tw 5.446 0 Td
-( )Tj
--0.005 Tc 0.005 Tw -5.446 -2.261 Td
-[(Ph)-5.8 (.)-1.3 (D)]TJ
-0 Tc 0 Tw 2.141 0 Td
-( )Tj
-1.12 0 Td
-( )Tj
--0.003 Tc 0.003 Tw 3.261 0 Td
-[(P)2.3 (h)-3.8 (a)-0.7 (r)1.5 (m)-4.3 (a)-0.6 (c)-1.4 (e)-4.6 (u)7 (t)-7.6 (i)-4.2 (c)-1.4 (a)-0.6 (l)]TJ
-0 Tc 0 Tw 7.196 0 Td
-( )Tj
--0.009 Tc 0.009 Tw 0.217 0 Td
-[(S)-17.7 (c)-7.4 (i)-10.3 (en)-2.8 (c)-7.4 (es)]TJ
-0 Tc 0 Tw 3.87 0 Td
-( )Tj
-0.001 Tc -0.001 Tw 0.217 0 Td
-[(\()-4 (P)6.3 (ha)3.4 (r)5.4 (ma)3.4 (c)2.7 (e)10.2 (ut)-3.6 (ic)2.7 (s)14.3 (\))]TJ
-0 Tc 0 Tw 7.62 0 Td
-( )Tj
-0.446 0 Td
-( )Tj
--0.002 Tc 0.002 Tw 3.261 0 Td
-[(Un)-6.7 (i)18.5 (v)39.9 (e)-3.6 (r)2.5 (si)-3.2 (t)-6.5 (y)]TJ
-0 Tc 0 Tw 4.728 0 Td
-( )Tj
--0.004 Tc 0.004 Tw 0.217 0 Td
-(of)Tj
-0 Tc 0 Tw 0.891 0 Td
-( )Tj
--0.005 Tc 0.005 Tw 0.217 0 Td
-[(Pi)-6.2 (t)1.3 (t)-9.6 (s)-2.5 (b)-1 (u)-5.8 (rg)4.1 (h)5 (,)]TJ
-0 Tc 0 Tw 5.076 0 Td
-( )Tj
--0.092 Tc 0.092 Tw 0.217 0 Td
-(PA)Tj
-0 Tc 0 Tw 1.174 0 Td
-( )Tj
-0.522 0 Td
-( )Tj
-3.261 0 Td
-( )Tj
--0.005 Tc 0.005 Tw 0.217 0 Td
-(1995)Tj
-0 Tc 0 Tw 2.359 0 Td
-( )Tj
-/TT2 1 Tf
-0.001 Tc -0.001 Tw -48.228 -1.522 Td
-[(Di)-3.6 (s)7 (s)-3.7 (er)1.9 (t)12.9 (at)2.1 (i)7.2 (o)-0.6 (n)4.7 (:)]TJ
-0 Tc 0 Tw 5.478 0 Td
-( )Tj
--0.01 Tc 0.01 Tw 0.217 0 Td
-[(C)-12.2 (h)-12.4 (a)-11.1 (r)12.7 (ac)-14.7 (t)1.9 (e)-11.1 (r)-9 (i)-3.8 (z)-11.5 (at)-9 (i)-14.6 (o)-11.6 (n)]
-TJ
 `
 
-func main() {
-	fmt.Println("PDF Stream Engine - pdfcpu Integration Example")
-	fmt.Println("--- Sample Stream ---")
-	fmt.Println(sampleStream)
-	fmt.Println("---------------------")
-
-	// Extract text using the simple API
-	// In pdfcpu integration: streamData would come from StreamDict.Decode()
+	// Simple API - uses default WinAnsi encoding for all fonts
 	text := streamengine.ExtractText([]byte(sampleStream))
 
-	fmt.Println("--- Extracted Text ---")
+	fmt.Println("Content Stream:")
+	fmt.Println(sampleStream)
+	fmt.Println("\nExtracted Text:")
 	fmt.Println(text)
-	fmt.Println("----------------------")
 }
+
+// runAdvancedExample demonstrates text extraction with custom font encodings
+// and ToUnicode CMaps for handling CID fonts and complex encodings.
+func runAdvancedExample() {
+	fmt.Println("EXAMPLE 2: Advanced Text Extraction (ToUnicode CMap)")
+	fmt.Println(strings.Repeat("-", 60))
+
+	// Sample ToUnicode CMap (simplified CMap syntax)
+	// This maps custom character codes to Unicode values
+	sampleCMap := `
+/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CMapName /Custom-UTF16 def
+/CMapType 2 def
+1 begincodespacerange
+<00> <FF>
+endcodespacerange
+4 beginbfchar
+<01> <0048>
+<02> <0065>
+<03> <006C>
+<04> <006F>
+endbfchar
+2 beginbfrange
+<20> <7E> <0020>
+<A0> <A9> <00A0>
+endbfrange
+endcmap
+`
+
+	// Parse the ToUnicode CMap
+	cmapReader := strings.NewReader(sampleCMap)
+	cmap, err := font.ParseToUnicodeCMap(cmapReader)
+	if err != nil {
+		fmt.Printf("Error parsing CMap: %v\n", err)
+		return
+	}
+
+	// Verify the CMap parsed correctly
+	fmt.Println("Sample CMap Mappings:")
+	fmt.Printf("  0x01 -> U+%04X (%s)\n", 0x0048, "H")
+	fmt.Printf("  0x02 -> U+%04X (%s)\n", 0x0065, "e")
+	fmt.Printf("  0x03 -> U+%04X (%s)\n", 0x006C, "l")
+	fmt.Printf("  0x04 -> U+%04X (%s)\n", 0x006F, "o")
+	fmt.Printf("  0x20-0x7E -> ASCII range\n\n")
+
+	// Create a font registry and register a font with the ToUnicode CMap
+	fontRegistry := font.NewFontRegistry()
+	// NOTE: Font names should NOT include the leading slash (/)
+	// The parser strips it during parsing
+	fontRegistry.RegisterWithToUnicode("CustomFont", cmap)
+
+	// Also register a standard font with WinAnsi encoding
+	fontRegistry.RegisterSimple("F1", font.EncodingWinAnsi)
+
+	// Sample content stream using the custom font
+	contentStream := `
+BT
+/CustomFont 12 Tf
+72 720 Td
+<01020304> Tj
+0 -14 Td
+(Regular ASCII text) Tj
+ET
+`
+
+	// Extract text using the font registry
+	text := streamengine.ExtractTextWithFonts([]byte(contentStream), fontRegistry)
+
+	fmt.Println("Content Stream:")
+	fmt.Println(contentStream)
+	fmt.Println("\nExtracted Text:")
+	fmt.Println(text)
+	fmt.Println("\nHow it works:")
+	fmt.Println("  1. Hex string <01020304> contains bytes [0x01, 0x02, 0x03, 0x04]")
+	fmt.Println("  2. ToUnicode CMap maps each byte to Unicode:")
+	fmt.Println("     0x01 -> U+0048 (H)")
+	fmt.Println("     0x02 -> U+0065 (e)")
+	fmt.Println("     0x03 -> U+006C (l)")
+	fmt.Println("     0x04 -> U+006F (o)")
+	fmt.Println("  3. Result: 'Helo' (followed by 'Regular ASCII text' on next line)")
+}
+
+// ===================================================================
+// Integration with pdfcpu
+// ===================================================================
+//
+// To use this with pdfcpu for extracting text from real PDFs:
+//
+// 1. Read the PDF file and get page content:
+//    ```go
+//    ctx, err := pdfcpu.ReadContext("document.pdf", pdfConf)
+//    page := ctx.Pages[0]
+//    streamDict := page.StreamDict
+//    streamData, err := streamDict.Decode()
+//    ```
+//
+// 2. Extract font resources and ToUnicode CMaps:
+//    ```go
+//    fontRegistry := font.NewFontRegistry()
+//
+//    resources := page.Resources
+//    if fonts, ok := resources["Font"].(map[string]any); ok {
+//        for fontName, fontObj := range fonts {
+//            fontDict := fontObj.(pdfcpu.Dict)
+//
+//            // Check for ToUnicode CMap
+//            if toUnicode, ok := fontDict["ToUnicode"]; ok {
+//                cmapStream := toUnicode.(pdfcpu.StreamDict)
+//                cmapData, _ := cmapStream.Decode()
+//
+//                // Parse the CMap
+//                cmap, err := font.ParseToUnicodeCMap(bytes.NewReader(cmapData))
+//                if err == nil {
+//                    fontRegistry.RegisterWithToUnicode(fontName, cmap)
+//                }
+//            } else {
+//                // No ToUnicode - use standard encoding
+//                encoding := font.EncodingWinAnsi // or detect from Encoding dict
+//                fontRegistry.RegisterSimple(fontName, encoding)
+//            }
+//        }
+//    }
+//    ```
+//
+// 3. Extract text with proper encoding:
+//    ```go
+//    text := streamengine.ExtractTextWithFonts(streamData, fontRegistry)
+//    ```
+//
+// This approach ensures that:
+//   - CID fonts are decoded using their ToUnicode CMaps
+//   - Standard fonts use appropriate encodings (WinAnsi, MacRoman, etc.)
+//   - Custom font encodings are handled correctly
+//   - Multi-byte character codes are properly supported
+

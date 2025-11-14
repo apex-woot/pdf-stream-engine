@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/apex-woot/pdf-stream-engine/font"
 	"github.com/apex-woot/pdf-stream-engine/parser"
 )
 
@@ -19,15 +20,29 @@ type Interpreter struct {
 	inTextObject bool
 	textState    TextState
 	stateStack   []TextState // For q/Q operators
+
+	// Font management
+	fontRegistry *font.FontRegistry
+	currentFont  *font.Font
 }
 
 // NewInterpreter creates a new interpreter.
-func NewInterpreter() *Interpreter {
+// If fontRegistry is nil, a default registry with WinAnsi encoding will be created.
+func NewInterpreter(fontRegistry *font.FontRegistry) *Interpreter {
+	if fontRegistry == nil {
+		fontRegistry = font.NewFontRegistry()
+	}
+
+	// Get default font from registry
+	defaultFont := fontRegistry.MustLookup("DefaultFont")
+
 	return &Interpreter{
 		textBuilder:  strings.Builder{},
 		inTextObject: false,
 		textState:    NewTextState(),
 		stateStack:   make([]TextState, 0),
+		fontRegistry: fontRegistry,
+		currentFont:  defaultFont,
 	}
 }
 
@@ -102,6 +117,11 @@ func (interp *Interpreter) processOperation(op parser.Operation) error {
 		}
 		interp.textState.FontName = fontName
 		interp.textState.FontSize = fontSize
+
+		// Look up font in registry
+		interp.currentFont = interp.fontRegistry.MustLookup(fontName)
+		// DEBUG: uncomment to see font lookups
+		// log.Printf("DEBUG: Set font to %q, found: %v", fontName, interp.currentFont.Name)
 
 	// --- Text Showing ---
 	case "Tj":
@@ -186,18 +206,20 @@ func (interp *Interpreter) processOperation(op parser.Operation) error {
 }
 
 // showText is a helper to append text.
-// It handles simple string/byte conversion and encoding.
+// It handles simple string/byte conversion and uses the current font's encoding.
 func (interp *Interpreter) showText(val any) error {
 	switch s := val.(type) {
 	case string:
 		// This comes from a Literal String ( ... )
-		// We assume it's mostly OK, but a real parser would
-		// decode octal escapes here.
-		interp.textBuilder.WriteString(s)
+		// For literal strings, we typically use the font's encoding directly
+		// Convert string to bytes and decode
+		decoded := interp.currentFont.DecodeText([]byte(s))
+		interp.textBuilder.WriteString(decoded)
 	case []byte:
 		// This comes from a Hex String < ... >
-		// We must decode it from WinAnsiEncoding.
-		interp.textBuilder.WriteString(DecodeWinAnsi(s))
+		// Decode using current font's encoding/ToUnicode CMap
+		decoded := interp.currentFont.DecodeText(s)
+		interp.textBuilder.WriteString(decoded)
 	default:
 		// This will catch operands that are not text, e.g., numbers.
 		return fmt.Errorf("operand not a string or []byte, got %T", val)
