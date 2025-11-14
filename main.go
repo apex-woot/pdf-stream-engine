@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"strings"
 
-	"github.com/apex-woot/pdf-stream-engine/interpreter"
+	"github.com/apex-woot/pdf-stream-engine/streamengine"
 )
 
 // This is a sample PDF content stream from a real file.
@@ -139,35 +137,16 @@ TJ
 `
 
 func main() {
-	fmt.Println("Starting PDF Stream Interpreter...")
+	fmt.Println("PDF Stream Engine - pdfcpu Integration Example")
 	fmt.Println("--- Sample Stream ---")
 	fmt.Println(sampleStream)
 	fmt.Println("---------------------")
 
-	// Create a reader from our sample string
-	reader := strings.NewReader(sampleStream)
-
-	// Create a new interpreter
-	interp := interpreter.NewInterpreter()
-
-	// Process the stream
-	err := interp.ProcessStream(reader)
-	if err != nil {
-		log.Fatalf("Error processing stream: %v", err)
-	}
-
-	// Get the extracted text
-	text := interp.GetText()
+	// Extract text using the simple API
+	// In pdfcpu integration: streamData would come from StreamDict.Decode()
+	text := streamengine.ExtractText([]byte(sampleStream))
 
 	fmt.Println("--- Extracted Text ---")
 	fmt.Println(text)
 	fmt.Println("----------------------")
-
-	// Expected Output:
-	// Hello, this is a literal string.
-	// This is on a new line.
-	// This is larger and will be popped.
-	// This is back to 12pt.
-	// Hex String
-	// Array of strings for TJ
 }
